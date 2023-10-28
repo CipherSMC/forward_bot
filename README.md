@@ -2,7 +2,11 @@
 Credit: https://www.instructables.com/Create-a-Free-Telegram-Auto-Forward-Application-fo/
 
 # Linux Install
-sudo apt install telethon
+To run the Forward_Bot, install the Python library <b>telethon</b> on your Linux system.
+
+```console
+sudo pip install telethon
+```
 
 ```python
 from telethon import TelegramClient, events
