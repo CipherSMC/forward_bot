@@ -46,14 +46,22 @@ async def send_message_with_delay(client, chat_id, message):
     # Generate a random delay between 5 to 20 seconds
     delay = random.uniform(5, 20)
     await asyncio.sleep(delay)
-    await client.send_message(chat_id, message)
+    try:
+    	# Use default timeout values provided by Telethon
+        await client.send_message(chat_id, message)
+    except Exception as e:
+        logging.warning(f"Failed to send message: {e}")
 
 # Function to forwad a message with a random delay
 async def forward_message_with_delay(client, chat_id, message):
     # Generate a random delay between 5 to 20 seconds
     delay = random.uniform(5, 20)
     await asyncio.sleep(delay)
-    await client.forward_messages(chat_id, message)
+    try:
+    	# Use default timeout values provided by Telethon
+        await client.forward_messages(chat_id, message)
+    except Exception as e:
+        logging.warning(f"Failed to forward message: {e}")
 
 # Your event handler function
 @client.on(events.NewMessage)
