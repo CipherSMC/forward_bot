@@ -1,16 +1,24 @@
 from telethon import TelegramClient, events
 import asyncio
 import logging
-from telethon.tl import functions, types  # Import the necessary types/functions
-logging.basicConfig(level=logging.WARNING)
 import random  # Import the random module to introduce randomness to the delay
+import os # Import relative path
+from telethon.tl import functions, types  # Import the necessary types/functions
+
+logging.basicConfig(level=logging.WARNING
 
 # Replace these values with your own api_id and api_hash
 api_id = 123456789
 api_hash = '123456789123456789'
 
+# Determine the directory of your script
+script_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Define the session file name
+session_name = "your_session_name"
+
 # Provide the folder path for the session
-session_path = "/home/ciphersmc/Auto_Foreward_Bot"
+session_path = os.path.join(script_dir, session_name)
 
 # Initialize the TelegramClient
 client = TelegramClient(session_path, api_id, api_hash)
