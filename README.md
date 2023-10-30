@@ -59,28 +59,43 @@ to_channelforward5 = 456
 from_ch.... = 123
 to_channelforward.... = 456
 
+# Define retry constants
+max_retries = 5  # Maximum number of retries
+base_delay = 5  # Initial retry delay in seconds
 
-# Function to send a message with a random delay
-async def send_message_with_delay(client, chat_id, message):
-    # Generate a random delay between 5 to 20 seconds
-    delay = random.uniform(5, 20)
-    await asyncio.sleep(delay)
-    try:
-    	# Use default timeout values provided by Telethon
-        await client.send_message(chat_id, message)
-    except Exception as e:
-        logging.warning(f"Failed to send message: {e}")
+# Function to send a message with a retry strategy
+async def send_message_with_retry(client, chat_id, message):
+    retry_delay = base_delay
+    retries = 0
 
-# Function to forwad a message with a random delay
-async def forward_message_with_delay(client, chat_id, message):
-    # Generate a random delay between 5 to 20 seconds
-    delay = random.uniform(5, 20)
-    await asyncio.sleep(delay)
-    try:
-    	# Use default timeout values provided by Telethon
-        await client.forward_messages(chat_id, message)
-    except Exception as e:
-        logging.warning(f"Failed to forward message: {e}")
+    while retries < max_retries:
+        try:
+            await client.send_message(chat_id, message)
+            return  # Message sent successfully
+        except Exception as e:
+            retries += 1
+            logging.warning(f"Failed to send message (attempt {retries}): {e}")
+            await asyncio.sleep(retry_delay)
+            retry_delay *= 2  # Exponential backoff
+
+    logging.warning("Max retries reached. Could not send the message.")
+    
+# Function to send a message with a retry strategy
+async def forward_message_with_retry(client, chat_id, message):
+    retry_delay = base_delay
+    retries = 0
+
+    while retries < max_retries:
+        try:
+            await client.forward_messages(chat_id, message)
+            return  # Message sent successfully
+        except Exception as e:
+            retries += 1
+            logging.warning(f"Failed to send message (attempt {retries}): {e}")
+            await asyncio.sleep(retry_delay)
+            retry_delay *= 2  # Exponential backoff
+
+    logging.warning("Max retries reached. Could not send the message.")
 
 # Your event handler function
 @client.on(events.NewMessage)
@@ -89,16 +104,16 @@ async def my_event_handler(event):
 
     # Handle different chats here
     if chat.id == from_ch1:
-        await send_message_with_delay(client, to_channelforward1, event.message)
+        await send_message_with_retry(client, to_channelforward1, event.message)
 
     if chat.id == from_ch2:
-        await send_message_with_delay(client, to_channelforward2, event.message)
+        await send_message_with_retry(client, to_channelforward2, event.message)
 
     if chat.id == from_ch3:
-        await send_message_with_delay(client, to_channelforward3, event.message)
+        await send_message_with_retry(client, to_channelforward3, event.message)
 
     if chat.id == from_....:
-        await forward_message_with_delay(client, to_....., event.message)
+        await forward_message_with_retry(client, to_....., event.message)
 
 asyncio.get_event_loop().run_forever()
 ```
