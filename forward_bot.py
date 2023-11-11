@@ -1,23 +1,21 @@
+# Import necessary libraries, including telethon.tl functions and types
 from telethon import TelegramClient, events
 import asyncio
 import logging
-import random  # Import the random module to introduce randomness to the delay
-import os # Import relative path
-from telethon.tl import functions, types  # Import the necessary types/functions
+import os
 
-logging.basicConfig(level=logging.WARNING
+# Set up logging to see warnings
+logging.basicConfig(level=logging.WARNING)
 
-# Replace these values with your own api_id and api_hash
-api_id = 123456789
-api_hash = '123456789123456789'
+# Replace your API credentials and session name
+api_id = 12345678
+api_hash = '12345678'
+session_name = "your_session_name"
 
 # Determine the directory of your script
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
-# Define the session file name
-session_name = "your_session_name"
-
-# Provide the folder path for the session
+# Define the session file path
 session_path = os.path.join(script_dir, session_name)
 
 # Initialize the TelegramClient
@@ -52,56 +50,57 @@ to_channelforward.... = 456
 max_retries = 5  # Maximum number of retries
 base_delay = 5  # Initial retry delay in seconds
 
-# Function to send a message with a retry strategy
-async def send_message_with_retry(client, chat_id, message):
+# Create a list to store messages
+message_queue = []
+
+# Function to send or forward a message with a retry strategy
+async def send_or_forward_message(client, chat_id, message):
     retry_delay = base_delay
     retries = 0
 
     while retries < max_retries:
         try:
-            await client.send_message(chat_id, message)
-            return  # Message sent successfully
+	    # Send the message to the destination chat
+	    await client.send_message(chat_id, message)
+            return  # Message sent/forwarded successfully
         except Exception as e:
             retries += 1
             logging.warning(f"Failed to send message (attempt {retries}): {e}")
             await asyncio.sleep(retry_delay)
-            retry_delay *= 2  # Exponential backoff
+            retry_delay *= 2  # Implement exponential backoff
 
-    logging.warning("Max retries reached. Could not send the message.")
-    
-# Function to send a message with a retry strategy
-async def forward_message_with_retry(client, chat_id, message):
-    retry_delay = base_delay
-    retries = 0
+    logging.warning("Max retries reached. Could not send/forward the message.")
 
-    while retries < max_retries:
-        try:
-            await client.forward_messages(chat_id, message)
-            return  # Message sent successfully
-        except Exception as e:
-            retries += 1
-            logging.warning(f"Failed to send message (attempt {retries}): {e}")
-            await asyncio.sleep(retry_delay)
-            retry_delay *= 2  # Exponential backoff
+# Function to process messages from the queue
+async def process_messages_from_queue(client):
+    while message_queue:
+        chat_id, message = message_queue.pop(0)
+        await send_or_forward_message(client, chat_id, message)
 
-    logging.warning("Max retries reached. Could not send the message.")
-
-# Your event handler function
+# Define an event handler for new messages
 @client.on(events.NewMessage)
 async def my_event_handler(event):
     chat = await event.get_chat()
 
-    # Handle different chats here
+    # Based on the source chat, add messages to the queue
     if chat.id == from_ch1:
-        await send_message_with_retry(client, to_channelforward1, event.message)
+        message_queue.append((to_channelforward1, event.message))
 
     if chat.id == from_ch2:
-        await send_message_with_retry(client, to_channelforward2, event.message)
+        message_queue.append((to_channelforward2, event.message))
 
     if chat.id == from_ch3:
-        await send_message_with_retry(client, to_channelforward3, event.message)
+        message_queue.append((to_channelforward3, event.message))
 
-    if chat.id == from_....:
-        await forward_message_with_retry(client, to_....., event.message)
 
+# Schedule a periodic task to send/forward messages from the queue
+async def send_or_forward_messages_periodically(client):
+    while True:
+        await process_messages_from_queue(client)
+        await asyncio.sleep(60)  # Process messages every 1 minute (adjust as needed)
+
+# Start the task for periodic message processing
+asyncio.get_event_loop().create_task(send_or_forward_messages_periodically(client))
+
+# Start the event loop
 asyncio.get_event_loop().run_forever()
